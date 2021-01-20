@@ -1,0 +1,345 @@
+---
+title: "Alexander_Map Assignment"
+author: "Rachel Alexander"
+date: "3/03/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+## Graphic Generated with ggplot: Rebuild It! 
+
+<div id="origecon"></div>
+![](economist1.png)
+
+
+```{r a1, eval = F, echo = T, message=F}
+#Load data set
+econ_data <- rio::import('EconomistData.csv')
+```
+
+## Potential Steps
+ - Create the data mapping 
+ - Adjust the point shapes 
+ - Add the labels (ggrepel)
+ - Reorder/rename the regions (factor())
+ - Change the scales
+ - Change colors manually (scale_color_manual())
+ - Add titles
+ - Change location/orientation of the legend
+
+```{r Mapping}
+#Match data elements to corresponding axis
+ggplot(
+  data = econ_data,
+  mapping = aes(
+    x = CPI,
+    y = HDI
+  )
+) 
+
+```
+ 
+```{r Point Shapes}
+ggplot(
+  data = econ_data,
+  mapping = aes(
+    x = CPI,
+    y = HDI
+  )
+) +
+#Adjust point size
+  geom_point(
+    mapping = aes(color = Region),
+    size = 4
+  )
+
+```
+
+```{r Labels}
+ggplot(
+  data = econ_data,
+  mapping = aes(
+    x = CPI,
+    y = HDI
+  )
+) +
+  geom_point(
+    mapping = aes(color = Region),
+    size = 4) +
+#Subset country observations in order to set them as point labels
+  geom_text(label = econ_data$Country) 
+
+```
+
+```{r Function Line}
+ggplot(
+  data = econ_data,
+  mapping = aes(
+    x = CPI,
+    y = HDI
+  )
+) +
+  geom_point(
+    mapping = aes(color = Region),
+    size = 4) +
+  geom_text(label = econ_data$Country) +
+#Approximate function line using geom_smooth
+  geom_smooth(method= "lm", formula = y ~ poly(x, 2), se=F, color = "red")
+
+```
+
+```{r Region Names}
+#Mutate Region into a factor variable
+#Replace factor levels of Region with new Region names
+econ_data <- mutate(econ_data, Region = as.factor(Region))
+
+levels(econ_data$Region) <- c("Americas", "Asia & Oceania", "Central & Eastern Europe", "OECD", "Middle East & north Africa", "Sub-Saharan Africa")
+
+```
+ 
+```{r Country Labels}
+#Create list with named countries approx above function line
+#Create list with named countries approx below function line
+#Seperate lists will allow for a more precise use of geom_text_repel 
+
+Country_Lables1 <- c( "Japan", "Britain",  "Barbados", "Singapore", "Bhutan", "China", "India", "Afghanistan", "Botswana", "Cape Verde", "South Africa", "Rwanda", "Congo")
+
+Country_Lables2 <- c("New Zealand", "Norway", "Italy", "Germany", "Greece", "Russia", "Brazil", "Argentina", "Venezuela","Myanmar", "Sudan", "Iraq", "US", "France", "Spain")
+
+```
+ 
+```{r ggrepepl} 
+#Install ggrepel to access geom_text_repel
+
+install.packages("ggrepel")
+library(ggrepel) 
+```
+
+```{r Correct Labels}
+ggplot(
+  data = econ_data,
+  mapping = aes(
+    x = CPI,
+    y = HDI
+  )
+) +
+  geom_point(
+    mapping = aes(color = Region),
+    size = 4) +
+  geom_smooth(method= "lm", formula = y ~ poly(x, 2), se=F, color = "red")+
+#Filter country labels from list one
+#Adjust labels in x and y direction 
+  geom_text_repel(aes(label=Country),
+    color = "gray20",
+    force=50,
+    max.iter=250000,
+    box.padding = 0.1,
+    direction = "x", 
+    nudge_x = 0.15,
+    nudge_y = 0.01,
+    point.padding = 0.7,
+    data = econ_data%>%
+    filter(Country%in%Country_Lables1)
+    )+
+#Filter country labels from list two
+#Adjust labels in x and y direction 
+  geom_text_repel(aes(label=Country),
+    color = "gray20",
+    force=50,
+    max.iter=250000,
+    box.padding = 0.1,
+    nudge_x = -0.2,
+    nudge_y = 0.035,
+    point.padding = 0.7,
+    data = econ_data%>%
+    filter(Country%in%Country_Lables2)
+    )
+```
+
+```{r Scales}
+ggplot(
+  data = econ_data,
+  mapping = aes(
+    x = CPI,
+    y = HDI
+  )
+) +
+  geom_point(
+    mapping = aes(color = Region),
+    size = 4) +
+  geom_smooth(method= "lm", formula = y ~ poly(x, 2), se=F, color = "red")+
+#Adjust scale for x axis
+  scale_x_continuous(breaks = seq(0, 10, 1))+
+#Adjust scale for y axis
+  scale_y_continuous(breaks = seq(0.1, 1, 0.1))+
+  geom_text_repel(aes(label=Country),
+    color = "gray20",
+    force=50,
+    max.iter=250000,
+    box.padding = 0.1,
+    direction = "x", 
+    nudge_x = 0.15,
+    nudge_y = 0.01,
+    point.padding = 0.7,
+    data = econ_data%>%
+    filter(Country%in%Country_Lables1)
+    )+
+  geom_text_repel(aes(label=Country),
+    color = "gray20",
+    force=50,
+    max.iter=250000,
+    box.padding = 0.1,
+    nudge_x = -0.2,
+    nudge_y = 0.035,
+    point.padding = 0.7,
+    data = econ_data%>%
+    filter(Country%in%Country_Lables2)
+    )
+```
+
+```{r Colors}
+ggplot(
+  data = econ_data,
+  mapping = aes(
+    x = CPI,
+    y = HDI
+  )
+) +
+#Add circle shape, fill color, and border thickness
+  geom_point(shape=21,
+    mapping = aes(color = Region),
+    size = 4,
+    fill = "azure2",
+    stroke = 1.5) +
+#Set Region factor levels equal to new color values
+  scale_color_manual(values =c("cyan2", "darkslategray1", "aquamarine3",
+                               "aquamarine4", "darkorange1", "coral4"))+
+  geom_smooth(method= "lm", formula = y ~ poly(x, 2), se=F, color = "red")+
+  scale_x_continuous(breaks = seq(0, 10, 1))+
+  scale_y_continuous(breaks = seq(0.1, 1, 0.1))+
+  geom_text_repel(aes(label=Country),
+    color = "gray20",
+    force=50,
+    max.iter=100000,
+    box.padding = 0.1,
+    direction = "x", 
+    nudge_x = 0.15,
+    nudge_y = 0.01,
+    point.padding = 0.75,
+    data = econ_data%>%
+    filter(Country%in%Country_Lables1)
+    )+
+  geom_text_repel(aes(label=Country),
+    color = "gray20",
+    force=50,
+    max.iter=100000,
+    box.padding = 0.1,
+    nudge_x = -0.2,
+    nudge_y = 0.035,
+    point.padding = 0.75,
+    data = econ_data%>%
+    filter(Country%in%Country_Lables2)
+    )
+```
+
+```{r Legend and titles}
+ggplot(
+  data = econ_data,
+  mapping = aes(
+    x = CPI,
+    y = HDI
+  )
+) +
+#Rename x and y axis
+  labs(y = "Human Development Index, 2011", x = "Corruption Perceptions Index, 2011")+
+  geom_point(shape=21,
+    mapping = aes(color = Region),
+    size = 4,
+    fill = "azure2",
+    stroke = 1.5) +
+  scale_color_manual(values =c("cyan2", "darkslategray1", "aquamarine3",
+                               "aquamarine4", "darkorange1", "coral4"))+
+#Add legend
+  #position legend at the top of the plot 
+  #remove legend title
+  theme(legend.position = "top", legend.title = element_blank())+
+#Add plot title
+  ggtitle("Corruption and human development")+
+  geom_smooth(method= "lm", formula = y ~ poly(x, 2), se=F, color = "red")+
+  scale_x_continuous(breaks = seq(0, 10, 1))+
+  scale_y_continuous(breaks = seq(0.1, 1, 0.1))+
+  geom_text_repel(aes(label=Country),
+    color = "gray20",
+    force=50,
+    max.iter=250000,
+    box.padding = 0.1,
+    direction = "x", 
+    nudge_x = 0.15,
+    nudge_y = 0.01,
+    point.padding = 0.7,
+    data = econ_data%>%
+    filter(Country%in%Country_Lables1)
+    )+
+  geom_text_repel(aes(label=Country),
+    color = "gray20",
+    force=50,
+    max.iter=250000,
+    box.padding = 0.1,
+    nudge_x = -0.2,
+    nudge_y = 0.035,
+    point.padding = 0.7,
+    data = econ_data%>%
+    filter(Country%in%Country_Lables2)
+    )
+```
+
+```{r Final Map}
+ggplot(
+  data = econ_data,
+  mapping = aes(
+    x = CPI,
+    y = HDI
+  )
+) +
+  labs(y = "Human Development Index, 2011", x = "Corruption Perceptions Index, 2011")+
+  geom_point(shape=21,
+    mapping = aes(color = Region),
+    size = 4,
+    fill = "azure2",
+    stroke = 1.5) +
+  scale_color_manual(values =c("cyan2", "darkslategray1", "aquamarine3",
+                               "aquamarine4", "darkorange1", "coral4"))+
+  theme(legend.position = "top", legend.title = element_blank())+
+  ggtitle("Corruption and human development")+
+  geom_smooth(method= "lm", formula = y ~ poly(x, 2), se=F, color = "red")+
+  scale_x_continuous(breaks = seq(0, 10, 1))+
+  scale_y_continuous(breaks = seq(0.1, 1, 0.1))+
+  geom_text_repel(aes(label=Country),
+    color = "gray20",
+    force=50,
+    max.iter=250000,
+    box.padding = 0.1,
+    direction = "x", 
+    nudge_x = 0.15,
+    nudge_y = 0.01,
+    point.padding = 0.7,
+    data = econ_data%>%
+    filter(Country%in%Country_Lables1)
+    )+
+  geom_text_repel(aes(label=Country),
+    color = "gray20",
+    force=50,
+    max.iter=250000,
+    box.padding = 0.1,
+    nudge_x = -0.2,
+    nudge_y = 0.035,
+    point.padding = 0.7,
+    data = econ_data%>%
+    filter(Country%in%Country_Lables2)
+    )
+```
